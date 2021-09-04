@@ -1,0 +1,50 @@
+{
+  "name": "ld-embed",
+  "version": "0.1.1",
+  "description": "Web exception detector",
+  "main": "src/index.js",
+  "files": [
+    "src",
+    "README.md",
+    "LICENCE",
+    "LdEmbed.js",
+    "LdEmbed.min.js"
+  ],
+  "keywords": [
+    "error",
+    "exception",
+    "logger",
+    "moniter"
+  ],
+  "author": "Akira0705 <1225658998@qq.com>",
+  "contributors": [],
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "babel-eslint": "^10.0.1",
+    "babel-plugin-add-module-exports": "^1.0.0",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.11.0",
+    "mocha": "^5.1.1",
+    "nyc": "^14.1.0",
+    "rimraf": "^3.0.0",
+    "rollup": "^0.43.0",
+    "rollup-plugin-babel": "^4.0.1",
+    "uglify-js": "^3.0.19"
+  },
+  "scripts": {
+    "minify": "uglifyjs LdEmbed.js -o LdEmbed.min.js  --compress --mangle --comments /Copyright/",
+    "build": "node --require @babel/register build-browser && npm run minify",
+    "publish": "npm run build && npm publish"
+  },
+  "engines": {
+    "node": ">= 6.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "license": "MIT"
+}
