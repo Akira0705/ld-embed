@@ -45,7 +45,7 @@
   },
   "scripts": {
     "git": "npm version patch && npm run build && git add . && git commit -m",
-    "git:push": "npm publish && git push --all && npm publish",
+    "git:push": "git push --all && npm publish",
     "minify": "uglifyjs LdEmbed.js -o LdEmbed.min.js  --compress --mangle --comments /Copyright/",
     "build": "node --require @babel/register build-browser && npm run minify"
   },
