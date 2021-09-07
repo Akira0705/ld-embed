@@ -1,8 +1,9 @@
 {
   "name": "ld-embed",
   "version": "0.1.1",
-  "description": "Web exception detector",
+  "description": "Web exception moniter",
   "main": "src/index.js",
+  "homepage": "https://github.com/Akira0705/ld-embed",
   "files": [
     "src",
     "README.md",
@@ -18,6 +19,13 @@
   ],
   "author": "Akira0705 <1225658998@qq.com>",
   "contributors": [],
+  "bugs": {
+    "url": "https://github.com/Akira0705/ld-embed/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Akira0705/ld-embed.git"
+  },
   "devDependencies": {
     "@babel/cli": "^7.0.0",
     "@babel/core": "^7.0.0",
@@ -36,9 +44,10 @@
     "uglify-js": "^3.0.19"
   },
   "scripts": {
+    "git": "npm version patch && npm run build && git add . && git commit -m",
+    "git:push": "npm publish && git push --all && npm publish",
     "minify": "uglifyjs LdEmbed.js -o LdEmbed.min.js  --compress --mangle --comments /Copyright/",
-    "build": "node --require @babel/register build-browser && npm run minify",
-    "publish": "npm run build && npm publish"
+    "build": "node --require @babel/register build-browser && npm run minify"
   },
   "engines": {
     "node": ">= 6.0.0"

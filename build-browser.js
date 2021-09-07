@@ -17,7 +17,7 @@ rollup({
   bundle.write({
     dest: 'LdEmbed.js',
     format: 'umd',
-    moduleName: pkg.name,
+    moduleName: 'LdEmbed',
     banner: (
       `/*!\n${
         String(fs.readFileSync('./LICENSE'))

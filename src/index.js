@@ -131,7 +131,7 @@ class Logger {
     }
     let options = {
       method: 'POST',
-      url: `${this.options.baseUrl}/api/report/create`,
+      url: `${this.baseUrl}/api/report/create`,
       data: errorInfo,
     };
     ajax(options)
@@ -315,6 +315,13 @@ class Logger {
   }
 
   proxyWindowError () {
+    let initParam = {
+      apikey: this.apikey,
+      ip: this.ip,
+      cityNo: this.cityNo,
+      cityName: this.cityName,
+    };
+
     // 初始化 reportHandller
     reportHandller.init(this);
     
