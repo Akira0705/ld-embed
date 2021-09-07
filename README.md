@@ -18,67 +18,44 @@
 
 ```javascript
 import LdEmbed from 'ld-embed';
+
+new LdEmbed({ ... })
 ```
 
 ### script
+
 可以作为独立脚本加载，也可以通过AMD加载器加载
 ##### 静态引入
 ```html
-// 获取城市信息 必须引入
-<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
 // 埋点引入
-<script id="rebugger" useCustomField="true" silentDev="false" reportMode="onError" apikey="API-KEY" src="/static/js/LdEmbed.min.js" crossorigin="anonymous"></script>
-```
-
-##### 动态引入
-```html
-// 获取城市信息 必须引入
-<script src="http://pv.sohu.com/cityjson?ie=utf-8"></script>
-// 动态埋点引入
+<script src="/static/js/LdEmbed.min.js"></script>
 <script type="text/javascript">
-
-function loadScript(url, apikey) {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = url;
-    script.setAttribute("id", "rebugger");
-    script.setAttribute("apikey", apikey);
-    script.setAttribute("reportMode", "onError");
-    document.body.appendChild(script);
-}
-
-loadScript("/static/js/LdEmbed.min.js", "API-KEY")
+  new LdEmbed({ ... })
 </script>
 ```
 
 ## 埋点属性
   埋点属性提供了apikey 、环境禁用设置、异常上传模式、自定义字段收集等配置信息
-> 属性配置方式，只需要将配置script标签属性即可 例如：
-```html
-  <script id="rebugger" useCustomField="true" silentDev="false" reportMode="onError" apikey="API-KEY" src="/static/js/front_rebugger.min.js" crossorigin="anonymous"></script>
+```javascript
+new LdEmbed({
+  useCustomField: true,
+  silentDev: false,
+  apikey: "API-KEY"
+})
 ```
-> 动态接入属性配置 通过setAttribute方法配置埋点属性 例如
-```html
-<script type="text/javascript">
-
-function loadScript(url, apikey) {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src = url;
-    script.setAttribute("id", "rebugger");
-    script.setAttribute("apikey", apikey);
-    script.setAttribute("reportMode", "onError");
-    document.body.appendChild(script);
-}
-
-loadScript("/static/js/front_rebugger.min.js", "API-KEY")
-</script>
+动态接入属性配置 通过setAttribute方法配置埋点属性, 例如:
+```javascript
+new LdEmbed({
+  useCustomField: true,
+  silentDev: false,
+  reportMode: 'onError'
+  apikey: "API-KEY"
+})
 ```
 ## API
 
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| id  | script标签的id | _string_  | `rebugger` |
 | apikey  |  必填，用于项目区分 | _string_  |  |
 | silent  |  是否禁用rebugger | _boolean_  | `false` |
 | silentDev  |  是否收集开发环境的错误  | _boolean_  | `false` |
@@ -97,25 +74,23 @@ loadScript("/static/js/front_rebugger.min.js", "API-KEY")
 | limitNum  | byDay上传模式默认超过20个会主动上传数据 | _number_  | `20` |
 | baseUrl  | 定义上报服务器地址 | _string_  | `http://localhost:9090` |
 
-```html
-<script id="rebugger" useCustomField="true" silentDev="false" reportMode="onError" apikey="API-KEY" src="/static/js/rebugger_logger.min.js"></script>
-// 定义属性配置
-<script>
-    if(Rebugger){
-        // 配置自定义上报字段 这些字段将会以JSON字符串的形式保存在metaDta字段里
-        Rebugger.default.options.customField = {
-            userName: {
-                origin: "localStorage",
-                paths: "user.userName"
-            },
-            userId: {
-                origin: "localStorage",
-                paths: "user.id"
-            }
-        }
-        Rebugger.default.options.baseUrl = "http://xxx...";
+```javascript
+/**
+ * 配置自定义上报字段 这些字段将会以JSON字符串的形式保存在metaDta字段里
+ * 可配置用户ID等标识
+ */
+new LdEmbed({
+  customField: {
+    userName: {
+      origin: "localStorage",
+      paths: "user.userName"
+    },
+    userId: {
+      origin: "localStorage",
+      paths: "user.id"
     }
-</script>
+  }
+})
 ```
 
 ## 上报接口
@@ -123,68 +98,72 @@ loadScript("/static/js/front_rebugger.min.js", "API-KEY")
 > 代码中主动上报 使用全局Rebugger对象
 
 ```javascript
-    // 使用日志对象时必须先判断该对象是否存在
-    if ( Rebugger ) {
-        ...
-        Rebugger.default.上报方法(上报信息对象);
-    }
-    // 安全使用 添加try catch
-    try {
-        if ( Rebugger ) {
-        ...
-        Rebugger.default.上报方法(上报信息对象);
-        }
-    } catch (error) {
-        
-    }
-```
+// 实例化的对象挂载都 global 上
+window.Rebugger = new LdEmbed({ ... })
 
-> 1、日志收集
+// 使用日志对象时必须先判断该对象是否存在
+if ( Rebugger ) {
+  ...
+  Rebugger.上报方法(上报信息对象);
+}
 
-```javascript
-      Rebugger.default.reportInfo(errorInfo);
-```
-
-> 2、警告信息
-
-```javascript
-     Rebugger.default.reportWarning(errorInfo);
-```
-
-> 3、http请求异常
-
-```javascript
-    Rebugger.default.reportHttpError(errorInfo);
-```
-
-> 4、js异常收集
-
-```javascript
-    Rebugger.default.reportError(errorInfo);
-```
-
-> 5、promise异常上报
-
-```javascript
-    Rebugger.default.reportHandledRejection(errorInfo);
-```
-
-> errorInfo 字段信息对照
-
-```javascript
-  // 异常字段
-  ReportFieldV = {
-    日志名称: "name",
-    异常信息: "message",
-    异常堆栈: "stack",
-    异常文件: "fileName",
-    所在文件行: "lineNumber",
-    所在文件列: "columnNumber",
-    其它信息: "metaData",
-    异常组件: "componentName",
-    组件参数: "propsData",
-    资源接口地址: "src",
-    状态码: "status",
-    状态内容: "statusText",
+// 安全使用 添加try catch
+try {
+  if ( Rebugger ) {
+    ...
+    Rebugger.上报方法(上报信息对象);
   }
+} catch (error) {
+    
+}
+```
+
+1、日志收集
+
+```javascript
+Rebugger.reportInfo(errorInfo);
+```
+
+2、警告信息
+
+```javascript
+Rebugger.reportWarning(errorInfo);
+```
+
+3、http请求异常
+
+```javascript
+Rebugger.reportHttpError(errorInfo);
+```
+
+4、js异常收集
+
+```javascript
+Rebugger.reportError(errorInfo);
+```
+
+5、promise异常上报
+
+```javascript
+Rebugger.reportHandledRejection(errorInfo);
+```
+
+errorInfo 字段信息对照
+
+```javascript
+// 异常字段
+ReportFieldV = {
+  日志名称: "name",
+  异常信息: "message",
+  异常堆栈: "stack",
+  异常文件: "fileName",
+  所在文件行: "lineNumber",
+  所在文件列: "columnNumber",
+  其它信息: "metaData",
+  异常组件: "componentName",
+  组件参数: "propsData",
+  资源接口地址: "src",
+  状态码: "status",
+  状态内容: "statusText",
+}
 ```
