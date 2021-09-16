@@ -1,7 +1,7 @@
 /* eslint-disable spaced-comment */
 /* eslint-disable space-before-function-paren */
 /* eslint-disable quotes */
-import baseConfig from '../config/index';
+
 // 屏幕分辨率
 var utils = {
   // 获取 系统 浏览器等相关信息
@@ -29,29 +29,6 @@ var utils = {
       envInfo
     );
     return ret;
-  },
-  // 获取默认的日志服务基础URL
-  getDefaultBaseUrl: function() {
-    let envInfo = this.getEnv();
-    let baseUrl = baseConfig.prod.baseUrl;
-    switch (envInfo.env) {
-      case "pro":
-        baseUrl = baseConfig.prod.baseUrl;
-        break;
-      case "test":
-        baseUrl = baseConfig.test.baseUrl;
-        break;
-      case "dev":
-        baseUrl = baseConfig.dev.baseUrl;
-        break;
-      case "pre":
-        baseUrl = baseConfig.test.baseUrl;
-        break;
-
-      default:
-        break;
-    }
-    return baseUrl;
   },
   getEnv: function() {
     let envInfo = {
@@ -172,24 +149,24 @@ var utils = {
     // if (typeof connection.type == "number") {
     //   connection.typeText = typeText[connection.type];
     // } else {
-    //   connection.typeText = connection.type;
+    //   connection.typeText = connection.type || connection.effectiveType;
     // }
-    // if (typeof connection.bandwidth == "number") {
-    //   if (connection.bandwidth > 10) {
+    // if (typeof connection.downlink == "number") {
+    //   if (connection.downlink > 10) {
     //     connection.type = "wifi";
-    //   } else if (connection.bandwidth > 2) {
+    //   } else if (connection.downlink > 2) {
     //     connection.type = "3g";
-    //   } else if (connection.bandwidth > 0) {
+    //   } else if (connection.downlink > 0) {
     //     connection.type = "2g";
-    //   } else if (connection.bandwidth == 0) {
+    //   } else if (connection.downlink == 0) {
     //     connection.type = "none";
     //   } else {
     //     connection.type = "unknown";
     //   }
     // }
-    // var html = "Type : " + connection.typeText;
-    // html += "Bandwidth : " + connection.bandwidth;
-    // var html += " isOnline : " + navigator.onLine;
+    // var html = "Type: " + connection.typeText;
+    // html += " Downlink: " + connection.downlink;
+    // html += " isOnline: " + navigator.onLine;
     return navigator.onLine;
   },
 

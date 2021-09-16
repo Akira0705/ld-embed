@@ -1,34 +1,15 @@
 // type异常类型 warn info caught 手动上报异常 unCaught 自动捕获代码异常 sourceError 资源加载异常 httpError 请求异常 unhandledRejection 未处理promise异常 handledRejection
 import utils from './lib/common';
-import customFieldUtil from './lib/customFieldUtil';
 import reportHandller from './lib/reportHandller';
-import ajax from './lib/ajax';
-
-// CustomeField 格式
-const CustomeField_Default = {
-  fullName: {
-    origin: 'localStorage',
-    paths: 'user.fullName',
-  },
-  uid: {
-    origin: 'localStorage',
-    paths: 'user.uid',
-  }
-}
 
 class Logger {
 	constructor(options = {}) {
 		this.apikey = options.apikey
-    // 是否获取自定义字段收集
-		this.useCustomField = options.useCustomField || false
     // 是否禁用 logger 不收集任何信息
 		this.silent = options.silent || false
-    // 开发环境是否收集
-		this.silentDev = options.silentDev || false
-    // 测试环境是否收集
-    this.silentTest = options.silentTest || false
-    // 预发布环境是否收集
-		this.silentPre = options.silentPre || false
+    // 是否收集Promise异常
+		this.silentPromise = options.silentPromise || false
+    // 是否开启用户行为录制
 		this.silentVideo = options.silentVideo || false
     // 异常上传模式 onError 立即上传 byNum 按天存储满多少个上传 byDay 按天上传 onErrorOffline 立即上报且支持线下缓存
 		this.reportMode = options.reportMode || 'onError'
@@ -41,26 +22,17 @@ class Logger {
     // 环境信息
 		this.env = options.env
     // 用户信息
-		this.user = options.user || { name: '', email: '' }
-    // 其它自定义信息
-		this.metaData = options.metaData || {}
 		this.ip = options.ip
 		this.cityNo = options.cityNo
 		this.cityName = options.cityName
-
-    /**
-     * 自定义保存字段 数据将会保存在metaData里面 
-     * origin: localStorage / sessionStorage / window / cookie 
-     * 不能获取跨域信息 需要将js文件下载
-     */
-		this.customField = options.customField || CustomeField_Default
 
 		this.today = `${new Date().getFullYear()}-${
       new Date().getMonth() + 1
     }-${new Date().getDate()}`;
 
-    // logger服务器的baseUrl
-		this.baseUrl = options.baseUrl || 'http://localhost:9090'
+    this.onError = options.onError
+    this.onErrorBatch = options.onErrorBatch
+    this.onErrorByImg = options.onErrorByImg
 
     this.init()
   }
@@ -76,10 +48,6 @@ class Logger {
     }
   }
 
-  getHostName() {
-    return document.domain;
-  }
-
   // 发送错误对象信息
   reportObjectByIMG(obj) {
     let paramStr = '';
@@ -87,8 +55,7 @@ class Logger {
       paramStr = `${paramStr + key}=${obj[key]}&`;
     }
 
-    let reportUrl = `${this.baseUrl}/api/report/uploadShort`;
-    new Image().src = `${reportUrl}?${paramStr}`;
+    this.onErrorByImg(paramStr)
   }
 
   // 上报http异常 用于手动
@@ -129,18 +96,8 @@ class Logger {
       let metaData = this.getMetaData(errorInfo.metaData);
       errorInfo = Object.assign({}, initParam, baseInfo, errorInfo, metaData);
     }
-    let options = {
-      method: 'POST',
-      url: `${this.baseUrl}/api/report/create`,
-      data: errorInfo,
-    };
-    ajax(options)
-      .then((res) => {
-        // console.log("success", res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+
+    this.onError && this.onError(errorInfo)
   }
 
   // 批量上传异常数据
@@ -148,24 +105,17 @@ class Logger {
     let dataObj = {
       list,
     };
+
     if (flag) {
       // 获取baseInfo等基础信息
     }
-    let options = {
-      method: 'POST',
-      url: `${this.baseUrl}/api/report/createList`,
-      data: dataObj,
-    };
-    ajax(options)
-      .then((res) => {
-        console.log('report success', res);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
+
+    this.onErrorBatch && this.onErrorBatch(dataObj)
   }
 
   initVueErrorHandler(vue) {
+    let self = this
+
     vue.config.errorHandler = function (err, vm, info) {
       // handle error
       // `info` 是 Vue 特定的错误信息，比如错误所在的生命周期钩子
@@ -184,10 +134,10 @@ class Logger {
       } = err;
 
       let initParam = {
-        apikey: this.apikey,
-        ip: this.ip,
-        cityNo: this.cityNo,
-        cityName: this.cityName,
+        apikey: self.apikey,
+        ip: self.ip,
+        cityNo: self.cityNo,
+        cityName: self.cityName,
       };
 
       let stackStr = stack.toString();
@@ -222,10 +172,10 @@ class Logger {
         stack: stack.toString(),
       };
       let baseInfo = utils.getBaseInfo();
-      let metaData = this.getMetaData();
+      let metaData = self.getMetaData();
       let params = Object.assign({}, initParam, baseInfo, metaData, errorInfo);
       // console.log(params);
-      reportHandller.report(this, params);
+      reportHandller.report(self, params);
     };
   }
 
@@ -249,11 +199,6 @@ class Logger {
     defaultInfo = defaultInfo || {};
     let metaData = defaultInfo;
 
-    if (this.useCustomField) {
-      let customFieldInfo = customFieldUtil.getCustomField(this.customField);
-      metaData = Object.assign({}, metaData, customFieldInfo);
-    }
-
     // 其它途径获取的metaData ...
     return { metaData: JSON.stringify(metaData) };
   }
@@ -262,35 +207,6 @@ class Logger {
   envMoniter () {
     if (this.silent === true) {
       console.log('silent true');
-      return false;
-    }
-
-    let domain = document.domain;
-    if (this.silentDev === true) {
-      this.silentDev = true;
-      let isDev = false;
-      let arr = domain.split('.');
-      if (
-        domain === '127.0.0.1' ||
-        domain === 'localhost' ||
-        arr[0].indexOf('dev') != -1
-      ) {
-        // 开发环境禁用
-        console.log('silentDev true');
-        isDev = true;
-        return false;
-      }
-    }
-
-    if (this.silentTest === true) {
-      // 测试环境禁用
-      console.log('silentTest true');
-      return false;
-    }
-
-    if (this.silentPre === true) {
-      // 预发布环境禁用
-      console.log('silentPre true');
       return false;
     }
 
@@ -336,7 +252,6 @@ class Logger {
           target instanceof HTMLImageElement;
         if (!isElementTarget) {
           // js报错
-          console.log('js error', event);
           let fileName, lineNumber, columnNumber;
           fileName = event.filename;
           lineNumber = event.lineno;
@@ -367,8 +282,7 @@ class Logger {
         } else {
           // 上报资源地址
           let src = target.src || target.href;
-          // console.log("资源加载异常", src);
-          console.log(event);
+          // console.log("资源加载异常", event);
           let tagName = target.tagName;
           let outerHTML = target.outerHTML;
           let selector = '';
@@ -386,11 +300,13 @@ class Logger {
               let className = item.className
                 ? `.${item.className.replace(/\s+/g, '.')}`
                 : '';
+              let tagName = item.tagName || item.nodeName || 'window'
+
               if (index == arr.length - 1) {
-                selector = selector + item.tagName.toLowerCase() + className;
+                selector = selector + tagName.toLowerCase() + className;
               } else {
                 selector = `${
-                  selector + item.tagName.toLowerCase() + className
+                  selector + tagName.toLowerCase() + className
                 } > `;
               }
             });
@@ -469,96 +385,99 @@ class Logger {
     if (window.Vue) {
       this.initVueErrorHandler(window.Vue);
     }
-    // 未处理的promise错误 rejectionhandled unhandledrejection
-    window.addEventListener('unhandledrejection', (event) => {
-      // 错误的详细信息在reason字段
-      // demo:settimeout error
-      console.log('未处理的promise错误', event);
-      let message = event.reason.message;
-      let stack = event.reason.stack;
-      let type = 'unhandledRejection';
-      if (!message && !stack) {
-        message = 'caught promise error';
-        stack = JSON.stringify(event.reason);
-      }
-      let errorInfo = {
-        name: event.reason.stack.name ? event.reason.stack.name : message,
-        message,
-        stack,
-        type,
-        columnNumber: event.reason.columnNumber,
-        fileName: event.reason.fileName,
-        lineNumber: event.reason.lineNumber,
-        emitTime: new Date(),
-      };
-      let reason = event.reason;
-      let metaData = {};
-      // 未处理网络promiase异常
-      if (message == 'Network Error' || message == '网关超时') {
-        type = 'httpError';
-        errorInfo.type = 'httpError';
-        if (reason.config) {
-          let requestInfo = {
-            method: reason.config.method,
-            url: reason.config.url,
-            headers: reason.config.headers,
-          };
-          errorInfo.src = reason.config.url;
-          metaData = Object.assign(metaData, requestInfo);
-          let responseInfo = {};
-          // 未验证 待验证
-          if (reason.response) {
-            errorInfo.status = reason.response.status;
-            errorInfo.statusText = reason.response.statusText;
-          }
+    
+    if (this.silentPromise) {
+      // 未处理的promise错误 rejectionhandled unhandledrejection
+      window.addEventListener('unhandledrejection', (event) => {
+        // 错误的详细信息在reason字段
+        // demo:settimeout error
+        // console.log('未处理的promise错误', event);
+        let message = event.reason.message;
+        let stack = event.reason.stack;
+        let type = 'unhandledRejection';
+        if (!message && !stack) {
+          message = 'caught promise error';
+          stack = JSON.stringify(event.reason);
         }
-      }
-      // 未处理promise里面的语法异常
-      if (
-        message != 'Network Error' &&
-        message != 'caught promise error' &&
-        message != '网关超时'
-      ) {
-        let stackStr = event.reason.stack.toString();
-        let arr = stackStr.split(/[\n]/);
-        let fileName, lineNumber, columnNumber;
-        if (arr.length > 1 && arr[1].indexOf('at') != -1 && !errorInfo.fileName) {
-          let str = arr[1];
-          let tempArr = str.split('(');
-          if (tempArr.length == 2) {
-            str = tempArr[1];
-            let tmpArr = str.split(':');
-            if (tmpArr.length > 1) {
-              lineNumber = tmpArr[tmpArr.length - 2];
-              columnNumber = tmpArr[tmpArr.length - 1];
-              fileName = str.replace(`:${lineNumber}:${columnNumber}`, '');
-              columnNumber = columnNumber.replace(')', '');
-              // console.log(lineNumber);
-              // console.log(columnNumber);
-              // console.log(fileName);
-              errorInfo.lineNumber = lineNumber;
-              errorInfo.columnNumber = columnNumber;
-              errorInfo.fileName = fileName;
+        let errorInfo = {
+          name: event.reason.stack ? event.reason.stack.name : message,
+          message,
+          stack,
+          type,
+          columnNumber: event.reason.columnNumber,
+          fileName: event.reason.fileName,
+          lineNumber: event.reason.lineNumber,
+          emitTime: new Date(),
+        };
+        let reason = event.reason;
+        let metaData = {};
+        // 未处理网络promiase异常
+        if (message == 'Network Error' || message == '网关超时') {
+          type = 'httpError';
+          errorInfo.type = 'httpError';
+          if (reason.config) {
+            let requestInfo = {
+              method: reason.config.method,
+              url: reason.config.url,
+              headers: reason.config.headers,
+            };
+            errorInfo.src = reason.config.url;
+            metaData = Object.assign(metaData, requestInfo);
+            let responseInfo = {};
+            // 未验证 待验证
+            if (reason.response) {
+              errorInfo.status = reason.response.status;
+              errorInfo.statusText = reason.response.statusText;
             }
           }
         }
-      }
-      // console.log(errorInfo);
-      let baseInfo = utils.getBaseInfo();
-      metaData = this.getMetaData(metaData);
-      let params = Object.assign({}, initParam, baseInfo, metaData, errorInfo);
-      // console.log(params);
-      reportHandller.report(this, params);
-    });
+        // 未处理promise里面的语法异常
+        if (
+          message != 'Network Error' &&
+          message != 'caught promise error' &&
+          message != '网关超时'
+        ) {
+          let stackStr = event.reason.stack.toString();
+          let arr = stackStr.split(/[\n]/);
+          let fileName, lineNumber, columnNumber;
+          if (arr.length > 1 && arr[1].indexOf('at') != -1 && !errorInfo.fileName) {
+            let str = arr[1];
+            let tempArr = str.split('(');
+            if (tempArr.length == 2) {
+              str = tempArr[1];
+              let tmpArr = str.split(':');
+              if (tmpArr.length > 1) {
+                lineNumber = tmpArr[tmpArr.length - 2];
+                columnNumber = tmpArr[tmpArr.length - 1];
+                fileName = str.replace(`:${lineNumber}:${columnNumber}`, '');
+                columnNumber = columnNumber.replace(')', '');
+                // console.log(lineNumber);
+                // console.log(columnNumber);
+                // console.log(fileName);
+                errorInfo.lineNumber = lineNumber;
+                errorInfo.columnNumber = columnNumber;
+                errorInfo.fileName = fileName;
+              }
+            }
+          }
+        }
+        // console.log(errorInfo);
+        let baseInfo = utils.getBaseInfo();
+        metaData = this.getMetaData(metaData);
+        let params = Object.assign({}, initParam, baseInfo, metaData, errorInfo);
+        // console.log(params);
+        reportHandller.report(this, params);
+      });
 
-    // 处理的promise错误
-    window.addEventListener('rejectionhandled', (event) => {
-      // 错误的详细信息在reason字段
-      // demo:settimeout error
-      console.log('rejectionhandled promise error', event);
-      let title = event.reason.message;
-      let stack = event.reason.stack;
-    });
+      // 处理的promise错误
+      window.addEventListener('rejectionhandled', (event) => {
+        // 错误的详细信息在reason字段
+        // demo:settimeout error
+        // console.log('rejectionhandled promise error', event);
+        let title = event.reason.message;
+        let stack = event.reason.stack;
+      });
+    }
 
   }
 

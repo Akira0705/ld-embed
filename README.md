@@ -34,68 +34,84 @@ new LdEmbed({ ... })
 </script>
 ```
 
-## 埋点属性
+## API
   埋点属性提供了apikey 、环境禁用设置、异常上传模式、自定义字段收集等配置信息
 ```javascript
 new LdEmbed({
-  useCustomField: true,
-  silentDev: false,
+  silentPromise: true,
   apikey: "API-KEY"
+  reportMode: 'onErrorOffline',
+  onError: (errorInfo: ErrorInfo) => {
+    // 处理单个异常上传
+  },
+  onErrorBatch: (errorInfoBatch: ErrorInfoBatch) => {
+    const errorInfos = errorInfoBatch.list
+    // 处理多个异常上传
+  },
 })
 ```
-动态接入属性配置 通过setAttribute方法配置埋点属性, 例如:
-```javascript
-new LdEmbed({
-  useCustomField: true,
-  silentDev: false,
-  reportMode: 'onError'
-  apikey: "API-KEY"
-})
-```
-## API
 
 | 参数 | 说明 | 类型 | 默认值 |
 | --- | --- | --- | --- |
-| apikey  |  必填，用于项目区分 | _string_  |  |
+| apikey  |  必填，用于项目区分 | _string_  | - |
 | silent  |  是否禁用rebugger | _boolean_  | `false` |
-| silentDev  |  是否收集开发环境的错误  | _boolean_  | `false` |
-| silentTest  |  是否收集测试环境的错误  | _boolean_  | `false` |
-| silentPre  |  是否收集预发布环境的错误   | _boolean_  | `false` |
-| reportMode  |  异常上传模式 onError 立即上传 byNum 按天存储满多少个上传 byDay 按天上传 onErrorOffline 立即上报且支持线下缓存 | _string_  | `onError` |
-| useCustomField  |  是否收集自定义字段，保存在metaData里面   | _boolean_  | `false` |
-| customField  | 通过埋点设置必须是json字符串建议在埋点后script标签里面定义，配置的数据将被保存在metaData字段里面 | _object_  | `false` |
-| silentVideo  |  是否开启用户行为录制, 异常场景还原 ——— 待开发  | _boolean_  | `false` |
-
-### 其它属性
-
-| 参数 | 说明 | 类型 | 默认值 |
-| --- | --- | --- | --- |
+| silentPromise  |  是否收集Promise异常   | _boolean_  | `false` |
+| reportMode  |  异常上传模式,可选值为 `onError` 立即上传。 `byNum` 按天存储满多少个上传。 `byDay` 按天上传。`onErrorOffline` 立即上报且支持线下缓存 | _string_  | `onError` |
 | reportNum  | byNum上传模式满n个上传数据，缓解服务端压力 | _number_  | `10` |
 | limitNum  | byDay上传模式默认超过20个会主动上传数据 | _number_  | `20` |
-| baseUrl  | 定义上报服务器地址 | _string_  | `http://localhost:9090` |
+| onError  | 上传模式为 `onError` `onErrorOffline` 时，接收报错信息 | (error: ErrorInfo) => {}  | - |
+| onErrorBatch  | 上传模式为 `byDay` `byNum` 时，接收报错信息 | (error: ErrorInfoBatch) => {}  | - |
+| silentVideo  |  是否开启用户行为录制, 异常场景还原 ——— 待开发  | _boolean_  | `false` |
 
-```javascript
-/**
- * 配置自定义上报字段 这些字段将会以JSON字符串的形式保存在metaDta字段里
- * 可配置用户ID等标识
- */
-new LdEmbed({
-  customField: {
-    userName: {
-      origin: "localStorage",
-      paths: "user.userName"
-    },
-    userId: {
-      origin: "localStorage",
-      paths: "user.id"
-    }
-  }
-})
-```
+### ErrorInfo
+`onError` `onErrorOffline` 回调函数第一个参数的属性
+
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| apikey  | 必填，用于项目区分 | _string_  | - |
+| screenInfo  | 窗口信息，[详细说明](https://www.w3school.com.cn/js/js_window_screen.asp)  | _string_  | - |
+| ip  | 当前网络IP地址 | _string_  | - |
+| cityNo  | IP省份代码 | _string_  | - |
+| cityName  | IP省份名称 | _string_  | - |
+| width  | 访问者屏幕宽度像素 | _number_  | - |
+| height  | 访问者屏幕高度像素 | _number_  | - |
+| colorDepth  | 硬件的色彩分辨率，[详细说明](https://www.w3school.com.cn/js/js_window_screen.asp)  | _string_  | - |
+| pixelDepth  | 屏幕的像素深度 | _string_  | - |
+| language  | 浏览器语言 | _string_  | - |
+| browser  | 浏览器名称 | _string_  | - |
+| coreVersion  | 浏览器版本号 | _string_  | - |
+| OS  | 浏览器平台（操作系统） | _string_  | - |
+| agent  | 浏览器发送到服务器的用户代理报头（user-agent header） | _string_  | - |
+| url  | 报错页面当前URL | _string_  | - |
+| online  | 浏览器是否在线 | _boolean_  | - |
+| env  | 当前项目环境 `dev` `test` `pre` | _string_  | - |
+| name  | 报错类型 `SyntaxError` `ReferenceError` `TypeError` `RangeError` `EvalError` `URIError`，[详细说明](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/SyntaxError)，最大长度254  | _string_  | - |
+| message  | 有关错误信息，最大长度2040 | _string_  | - |
+| fileName  | 引发此错误的文件的路径. | _string_  | - |
+| lineNumber  | 抛出错误的代码在其源文件中所在的行号 | _string_  | - |
+| columnNumber  | 引发此错误的文件行中的列号 | _string_  | - |
+| componentName  | Vue框架 报错组件名称 | _string_  | - |
+| type  | 错误类型 `unCaught` `sourceError` `httpError` | _string_  | - |
+| emitTime  | 当前设备时间 | _Date_  | - |
+| stack  | 函数的堆栈追踪字符串，最大长度60000 | _string_  | - |
+| src  | 资源加载异常时，所请求的资源地址 | _string_  | - |
+| tagName  | 资源加载异常时，节点的标签. 例 `script` `img` 等 | _string_  | - |
+| selector  | 节点在文档里的选择器位置 | _string_  | - |
+| outerHTML  | 节点的完整HTML | _string_  | - |
+| status  | Promise异常和资源异常的`HTTP请求错误码` | _string_  | - |
+| statusText  | HTTP请求错误描述 | _string_  | - |
+
+### ErrorInfoBatch
+
+`onErrorBatch` 回调函数第一个参数的属性
+
+| 参数 | 说明 | 类型 | 默认值 |
+| --- | --- | --- | --- |
+| list  | 错误信息的数组 | ErrorInfo[] | - |
 
 ## 上报接口
 
-> 代码中主动上报 使用全局Rebugger对象
+代码中主动上报 建议挂载到全局对象上
 
 ```javascript
 // 实例化的对象挂载都 global 上
@@ -117,6 +133,19 @@ try {
     
 }
 ```
+
+## 框架错误
+如果你使用的是Vue，那么在new前需要把类挂载在window的`Vue`上。包里检测到有全局Vue将重写`Vue.config.errorHandler()`
+
+```javascript
+new Vue({ ... }).$mount('#app')
+
+window.Vue = Vue
+
+new LdEmbed({ ... })
+```
+
+## 手动上报
 
 1、日志收集
 
@@ -146,24 +175,4 @@ Rebugger.reportError(errorInfo);
 
 ```javascript
 Rebugger.reportHandledRejection(errorInfo);
-```
-
-errorInfo 字段信息对照
-
-```javascript
-// 异常字段
-ReportFieldV = {
-  日志名称: "name",
-  异常信息: "message",
-  异常堆栈: "stack",
-  异常文件: "fileName",
-  所在文件行: "lineNumber",
-  所在文件列: "columnNumber",
-  其它信息: "metaData",
-  异常组件: "componentName",
-  组件参数: "propsData",
-  资源接口地址: "src",
-  状态码: "status",
-  状态内容: "statusText",
-}
 ```
