@@ -1,6 +1,6 @@
 {
   "name": "ld-embed",
-  "version": "0.1.4",
+  "version": "1.0.0",
   "description": "Web exception moniter",
   "main": "src/index.js",
   "homepage": "https://github.com/Akira0705/ld-embed",
@@ -44,7 +44,7 @@
     "uglify-js": "^3.0.19"
   },
   "scripts": {
-    "git": "npm version patch && npm run build && git add . && git commit -m",
+    "git": "git add . && git commit -m && npm version patch && npm run build",
     "git:push": "git push --all && npm publish",
     "minify": "uglifyjs LdEmbed.js -o LdEmbed.min.js  --compress --mangle --comments /Copyright/",
     "build": "node --require @babel/register build-browser && npm run minify"

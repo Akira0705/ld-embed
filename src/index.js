@@ -17,8 +17,6 @@ class Logger {
 		this.reportNum = options.reportNum || 10
     // 缓存数据最大数
 		this.limitNum = options.limitNum || 20
-    // 版本信息
-		this.appVersion = options.appVersion
     // 环境信息
 		this.env = options.env
     // 用户信息
@@ -218,7 +216,7 @@ class Logger {
     if (!this.cityName || !this.cityNo) {
       var script = document.createElement("script");
       script.type = "text/javascript";
-      script.src = "http://pv.sohu.com/cityjson?ie=utf-8";
+      script.src = "//pv.sohu.com/cityjson?ie=utf-8";
       document.body.appendChild(script);
       script.onload = () => {
         if (window.returnCitySN) {
