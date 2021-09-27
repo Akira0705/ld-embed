@@ -37,7 +37,6 @@ class Logger {
 
   // 初始化 logger 框架内使用
   init() {
-    console.log('init ld-embed');
     if (!this.apikey) console.warn('logger 缺少apikey');
 
     if (this.envMoniter()) {

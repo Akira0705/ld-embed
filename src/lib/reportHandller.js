@@ -26,7 +26,6 @@ let handleDebounce = function(action, delay) {
 var reportHandller = {
   // 查询当天是否有上报
   init(logger) {
-    console.log("init reportHandller");
     // 查询上一日 byNum byDay onErrorOffline 残留未上传数据
     let today = logger.today;
     let ls = lsUtils.getObj("frontLogger", {});
