@@ -215,7 +215,7 @@ class Logger {
     if (!this.cityName || !this.cityNo) {
       var script = document.createElement("script");
       script.type = "text/javascript";
-      script.src = "//pv.sohu.com/cityjson?ie=utf-8";
+      script.src = "https://pv.sohu.com/cityjson?ie=utf-8";
       document.body.appendChild(script);
       script.onload = () => {
         if (window.returnCitySN) {
@@ -285,10 +285,6 @@ class Logger {
           let selector = '';
           let paths = event.path;
 
-          /**
-           * img标签 空地址 不视为错误
-           * 1. 动态图片，初始化时没有src
-           */
           if (
             tagName === "IMG" && 
             outerHTML.indexOf('src=""') > -1
