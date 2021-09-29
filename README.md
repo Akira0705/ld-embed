@@ -109,9 +109,49 @@ new LdEmbed({
 | --- | --- | --- | --- |
 | list  | 错误信息的数组 | ErrorInfo[] | - |
 
+## 框架错误
+
+### Vue
+
+如果你使用的是Vue，那么在new前需要把类挂载在window的`Vue`上。包里检测到有全局Vue将重写`Vue.config.errorHandler()`
+
+```javascript
+window.Vue = Vue
+
+new LdEmbed({ ... })
+```
+
+### AngularJS 1.x
+AngularJS通过exceptionHandler捕捉所有未捕获的异常。
+
+
+```javascript
+// AngularJS错误处理程序
+// 需自定义错误类型（AngularError）
+angular.module('loggerApp').config(function ($provide) {
+  function AngularError(message, statck) {
+    this.name = 'AngularError';
+    this.message = message || 'unknow error';
+    this.stack = statck || (new Error()).stack;
+  }
+  AngularError.prototype = Object.create(Error.prototype);
+  AngularError.prototype.constructor = AngularError;
+
+  // 监控日志
+  $provide.decorator('$exceptionHandler', function ($delegate) {
+    return function (exception, cause) {
+      setTimeout(function () {
+        $delegate(exception, cause);
+        throw new AngularError(exception.message, exception.stack)
+      }, 100)
+    };
+  });
+});
+```
+
 ## 手动上报
 
-代码中主动上报 建议挂载到全局对象上
+需要代码中主动上报业务相关错误 建议挂载到全局对象上
 
 ```javascript
 // 实例化的对象挂载都 global 上
@@ -120,32 +160,19 @@ window.Rebugger = new LdEmbed({ ... })
 // 使用日志对象时必须先判断该对象是否存在
 if ( Rebugger ) {
   ...
-  Rebugger.上报方法(上报信息对象);
+  Rebugger.上报方法(ErrorInfo);
 }
 
 // 安全使用 添加try catch
 try {
   if ( Rebugger ) {
     ...
-    Rebugger.上报方法(上报信息对象);
+    Rebugger.上报方法(ErrorInfo);
   }
 } catch (error) {
     
 }
 ```
-
-## 框架错误
-如果你使用的是Vue，那么在new前需要把类挂载在window的`Vue`上。包里检测到有全局Vue将重写`Vue.config.errorHandler()`
-
-```javascript
-new Vue({ ... }).$mount('#app')
-
-window.Vue = Vue
-
-new LdEmbed({ ... })
-```
-
-## 手动上报
 
 1、日志收集
 
