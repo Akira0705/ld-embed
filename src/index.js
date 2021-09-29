@@ -284,6 +284,18 @@ class Logger {
           let outerHTML = target.outerHTML;
           let selector = '';
           let paths = event.path;
+
+          /**
+           * img标签 空地址 不视为错误
+           * 1. 动态图片，初始化时没有src
+           */
+          if (
+            tagName === "IMG" && 
+            outerHTML.indexOf('src=""') > -1
+          ) {
+            return
+          }
+
           if (paths && paths.length > 0) {
             paths.reverse();
             // console.log(paths);
@@ -349,6 +361,7 @@ class Logger {
               }
             });
           }
+
           // outerHTML XPath status 404 statusText selector
           let errorInfo = {
             name: 'sourceError',

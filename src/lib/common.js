@@ -173,8 +173,8 @@ var utils = {
   // 获取系统信息
   getSysInfo: function() {
     let sysInfo = {};
-    let browser = this.getBrowser().browser || "未知浏览器"; //获取浏览器名
-    let version = this.getBrowser().version || "未知浏览器版本号"; //获取浏览器版本
+    let browser = this.getBrowser() ? this.getBrowser().browser || "未知浏览器" : "未知浏览器"; //获取浏览器名
+    let version = this.getBrowser() ? this.getBrowser().version || "未知浏览器版本号" : "未知浏览器版本号"; //获取浏览器版本
     let OS = this.getOS() + " " + this.getDigits() || "未知操作系统"; //系统版本号
     sysInfo.browser = browser;
     sysInfo.coreVersion = version;
